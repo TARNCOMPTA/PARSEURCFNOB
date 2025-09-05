@@ -10,11 +10,6 @@ export function FileUpload({ onFileLoad }: FileUploadProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleFile = useCallback((file: File) => {
-    if (!file.name.toLowerCase().includes('.txt') && !file.name.toLowerCase().includes('.cfonb')) {
-      // Accepter tous les fichiers texte
-      return;
-    }
-
     setIsLoading(true);
     const reader = new FileReader();
     
@@ -100,7 +95,6 @@ export function FileUpload({ onFileLoad }: FileUploadProps) {
                 type="file"
                 id="file-input"
                 className="hidden"
-                accept=".txt,.cfonb"
                 onChange={handleInputChange}
               />
               
@@ -114,7 +108,7 @@ export function FileUpload({ onFileLoad }: FileUploadProps) {
               <div className="flex items-start space-x-2 text-sm text-gray-500 max-w-md">
                 <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                 <p>
-                  Formats acceptés: tous fichiers texte<br />
+                  Formats acceptés: tous types de fichiers<br />
                   Le fichier doit contenir des lignes de 120 ou 121 caractères selon la norme CFONB
                 </p>
               </div>
