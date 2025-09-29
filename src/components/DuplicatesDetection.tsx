@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { CFONBRecord } from '../types/cfonb';
 import { AlertTriangle, CheckCircle, Eye, EyeOff, Download } from 'lucide-react';
+import { exportToLimpeedCSV } from '../utils/limpeedExport';
 
 interface DuplicatesDetectionProps {
   records: CFONBRecord[];
@@ -139,6 +140,10 @@ export function DuplicatesDetection({ records, onExport }: DuplicatesDetectionPr
     });
   };
 
+  const handleLimpeedExport = () => {
+    exportToLimpeedCSV(records, 'export_limpeed_doublons.csv');
+  };
+
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '';
     const [year, month, day] = dateStr.split('-');
@@ -254,13 +259,22 @@ export function DuplicatesDetection({ records, onExport }: DuplicatesDetectionPr
           )}
         </div>
         
-        <button
-          onClick={onExport}
-          className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
-        >
-          <Download className="h-4 w-4" />
-          <span>Exporter les doublons</span>
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleLimpeedExport}
+            className="flex items-center space-x-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            <Download className="h-4 w-4" />
+            <span>Export LIMPEED</span>
+          </button>
+          <button
+            onClick={onExport}
+            className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+          >
+            <Download className="h-4 w-4" />
+            <span>Export complet</span>
+          </button>
+        </div>
       </div>
 
       {/* Résultats */}
