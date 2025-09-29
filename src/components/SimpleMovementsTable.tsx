@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { CFONBRecord } from '../types/cfonb';
 import { ChevronUp, ChevronDown, Download } from 'lucide-react';
+import { exportToLimpeedCSV } from '../utils/limpeedExport';
 
 interface SimpleMovementsTableProps {
   records: CFONBRecord[];
@@ -168,6 +169,24 @@ export function SimpleMovementsTable({ records, onExport, selectedAccount }: Sim
     return `${banque}-${guichet} • ${compte}`;
   };
 
+  const handleLimpeedExport = () => {
+    let recordsToExport = records;
+    let exportFilename = 'export_limpeed.csv';
+    
+    // Si un compte spécifique est sélectionné, exporter seulement ses données
+    if (selectedAccount) {
+      const [banque, guichet, compte] = selectedAccount.split('-');
+      recordsToExport = records.filter(record => 
+        record.banque === banque && 
+        record.guichet === guichet && 
+        record.compte === compte
+      );
+      const accountName = selectedAccount.split('-').join('_');
+      exportFilename = `export_limpeed_${accountName}.csv`;
+    }
+    
+    exportToLimpeedCSV(recordsToExport, exportFilename);
+  };
   return (
     <div className="w-full">
       {/* En-tête avec solde */}
@@ -206,13 +225,22 @@ export function SimpleMovementsTable({ records, onExport, selectedAccount }: Sim
           />
         </div>
         
-        <button
-          onClick={onExport}
-          className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
-        >
-          <Download className="h-4 w-4" />
-          <span>Exporter CSV</span>
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleLimpeedExport}
+            className="flex items-center space-x-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            <Download className="h-4 w-4" />
+            <span>Export LIMPEED</span>
+          </button>
+          <button
+            onClick={onExport}
+            className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+          >
+            <Download className="h-4 w-4" />
+            <span>Export complet</span>
+          </button>
+        </div>
       </div>
 
       {/* Résumé */}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { ParseResult } from '../types/cfonb';
 import { FileText, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
+import { exportToLimpeedCSV } from '../utils/limpeedExport';
 
 interface StatsDashboardProps {
   result: ParseResult;
@@ -14,6 +15,9 @@ export function StatsDashboard({ result, filename }: StatsDashboardProps) {
     .filter(r => r.type_enregistrement === '04')
     .reduce((sum, r) => sum + r.montant, 0);
 
+  const handleLimpeedExport = () => {
+    exportToLimpeedCSV(result.records, 'export_limpeed.csv');
+  };
   const StatCard = ({ 
     title, 
     value, 
@@ -63,6 +67,15 @@ export function StatsDashboard({ result, filename }: StatsDashboardProps) {
         <p className="text-gray-600">
           Fichier: <span className="font-medium">{filename}</span>
         </p>
+        <div className="mt-4">
+          <button
+            onClick={handleLimpeedExport}
+            className="flex items-center space-x-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            <CheckCircle className="h-4 w-4" />
+            <span>Export LIMPEED</span>
+          </button>
+        </div>
       </div>
 
       {/* Statistiques principales */}
