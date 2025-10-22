@@ -15,12 +15,17 @@ export function FileUpload({ onFileLoad }: FileUploadProps) {
     
     reader.onload = (e) => {
       const content = e.target?.result as string;
-      onFileLoad(content, file.name);
-      setIsLoading(false);
+      try {
+        onFileLoad(content, file.name);
+        setIsLoading(false);
+      } catch (error) {
+        setIsLoading(false);
+        // L'erreur sera gérée par le composant parent
+      }
     };
     
     reader.onerror = () => {
-      alert('Erreur lors de la lecture du fichier');
+      alert('Erreur lors de la lecture du fichier. Vérifiez que le fichier n\'est pas corrompu.');
       setIsLoading(false);
     };
     

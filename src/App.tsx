@@ -26,7 +26,31 @@ function App() {
       setActiveTab('stats');
       setSelectedAccount('');
     } catch (error) {
-      alert('Erreur lors du traitement du fichier: ' + (error instanceof Error ? error.message : 'Erreur inconnue'));
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+      
+      // Messages d'erreur plus explicites
+      let userMessage = errorMessage;
+      if (errorMessage.includes('XML détecté')) {
+        userMessage = '❌ Format non supporté\n\n' + 
+          'Vous tentez d\'importer un fichier XML (probablement SEPA).\n' +
+          'Cette application traite uniquement les fichiers CFONB 120/121 caractères.\n\n' +
+          '💡 Conseil: Demandez à votre banque un export au format CFONB via EBICS.';
+      } else if (errorMessage.includes('JSON détecté')) {
+        userMessage = '❌ Format non supporté\n\n' + 
+          'Vous tentez d\'importer un fichier JSON.\n' +
+          'Cette application traite uniquement les fichiers CFONB 120/121 caractères.';
+      } else if (errorMessage.includes('CSV détecté')) {
+        userMessage = '❌ Format non supporté\n\n' + 
+          'Vous tentez d\'importer un fichier CSV.\n' +
+          'Cette application traite uniquement les fichiers CFONB 120/121 caractères.';
+      } else if (errorMessage.includes('Longueur incorrecte')) {
+        userMessage = '❌ Format CFONB invalide\n\n' + 
+          'Le fichier ne respecte pas le format CFONB 120/121 caractères.\n' +
+          'Chaque ligne doit faire exactement 120 ou 121 caractères.\n\n' +
+          '💡 Vérifiez que c\'est bien un fichier de relevé bancaire CFONB.';
+      }
+      
+      alert(userMessage);
     }
   };
 

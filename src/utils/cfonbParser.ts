@@ -143,7 +143,30 @@ function parseType07(line: string, lineNumber: number): CFONBRecord {
  * Parseur principal pour fichier CFONB 120 caractères
  */
 export function parseCFONB(fileContent: string): ParseResult {
+  // Détection préalable du format de fichier
+  const trimmedContent = fileContent.trim();
+  
+  // Vérifier si c'est un fichier XML
+  if (trimmedContent.startsWith('<?xml') || trimmedContent.startsWith('<')) {
+    throw new Error('Format XML détecté. Ce parseur traite uniquement les fichiers CFONB 120/121 caractères. Veuillez utiliser un fichier de relevé bancaire CFONB.');
+  }
+  
+  // Vérifier si c'est un fichier JSON
+  if (trimmedContent.startsWith('{') || trimmedContent.startsWith('[')) {
+    throw new Error('Format JSON détecté. Ce parseur traite uniquement les fichiers CFONB 120/121 caractères.');
+  }
+  
+  // Vérifier si c'est un fichier CSV
+  if (trimmedContent.includes(',') && trimmedContent.includes(';') && trimmedContent.split('\n')[0].split(/[,;]/).length > 5) {
+    throw new Error('Format CSV détecté. Ce parseur traite uniquement les fichiers CFONB 120/121 caractères.');
+  }
+
   const lines = fileContent.split('\n').filter(line => line.trim() !== '');
+  
+  if (lines.length === 0) {
+    throw new Error('Le fichier est vide ou ne contient aucune ligne valide.');
+  }
+
   const records: CFONBRecord[] = [];
   const errors: Array<{ line_number: number; line: string; error: string }> = [];
   
@@ -173,10 +196,6 @@ export function parseCFONB(fileContent: string): ParseResult {
           record = parseType01(line, lineNumber);
           stats.ancien_solde++;
           break;
-        case '01':
-          record = parseType01(line, lineNumber);
-          stats.ancien_solde++;
-          break;
         case '04':
           record = parseType04(line, lineNumber);
           stats.mouvements++;
@@ -184,10 +203,6 @@ export function parseCFONB(fileContent: string): ParseResult {
         case '05':
           record = parseType05(line, lineNumber);
           stats.complements++;
-          break;
-        case '07':
-          record = parseType07(line, lineNumber);
-          stats.nouveau_solde++;
           break;
         case '07':
           record = parseType07(line, lineNumber);
@@ -220,5 +235,46 @@ export function parseCFONB(fileContent: string): ParseResult {
     }
   });
 
+  // Validation de l'intégrité des soldes
+  validateBalanceIntegrity(records, errors);
+
   return { records, stats, errors };
+}
+
+/**
+ * Valide l'intégrité des soldes (ancien solde + mouvements = nouveau solde)
+ */
+function validateBalanceIntegrity(records: CFONBRecord[], errors: Array<{ line_number: number; line: string; error: string }>) {
+  // Grouper par compte
+  const accountGroups = new Map<string, CFONBRecord[]>();
+  
+  records.forEach(record => {
+    const accountKey = `${record.banque}-${record.guichet}-${record.compte}`;
+    if (!accountGroups.has(accountKey)) {
+      accountGroups.set(accountKey, []);
+    }
+    accountGroups.get(accountKey)!.push(record);
+  });
+  
+  // Vérifier chaque compte
+  accountGroups.forEach((accountRecords, accountKey) => {
+    const ancienSolde = accountRecords.find(r => r.type_enregistrement === '01');
+    const nouveauSolde = accountRecords.find(r => r.type_enregistrement === '07');
+    const mouvements = accountRecords.filter(r => r.type_enregistrement === '04');
+    
+    if (ancienSolde && nouveauSolde && mouvements.length > 0) {
+      const totalMouvements = mouvements.reduce((sum, m) => sum + m.montant, 0);
+      const soldeCalcule = (ancienSolde.solde || 0) + totalMouvements;
+      const soldeReel = nouveauSolde.solde || 0;
+      
+      // Tolérance de 0.01€ pour les erreurs d'arrondi
+      if (Math.abs(soldeCalcule - soldeReel) > 0.01) {
+        errors.push({
+          line_number: nouveauSolde.line_number,
+          line: nouveauSolde.raw_line,
+          error: `Incohérence de solde pour le compte ${accountKey}: calculé ${soldeCalcule.toFixed(2)}€, déclaré ${soldeReel.toFixed(2)}€`
+        });
+      }
+    }
+  });
 }
