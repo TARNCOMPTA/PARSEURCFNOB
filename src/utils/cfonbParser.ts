@@ -50,14 +50,20 @@ function decodeAmount(amountStr: string): number {
 
 /**
  * Formate une date CFONB (JJMMAA) vers format ISO
+ * Utilise une logique intelligente pour déterminer le siècle:
+ * - Années 00-49: 2000-2049
+ * - Années 50-99: 1950-1999
  */
 function formatDate(dateStr: string): string {
   if (!dateStr || dateStr.length !== 6) return '';
-  
+
   const day = dateStr.substring(0, 2);
   const month = dateStr.substring(2, 4);
-  const year = '20' + dateStr.substring(4, 6);
-  
+  const yearTwoDigits = parseInt(dateStr.substring(4, 6), 10);
+
+  const century = yearTwoDigits <= 49 ? '20' : '19';
+  const year = century + dateStr.substring(4, 6);
+
   return `${year}-${month}-${day}`;
 }
 

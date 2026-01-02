@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
 import { HomePage } from './components/HomePage';
 import { FileUpload } from './components/FileUpload';
+import { Header } from './components/Header';
 import { StatsDashboard } from './components/StatsDashboard';
 import { RecordTable } from './components/RecordTable';
 import { SimpleMovementsTable } from './components/SimpleMovementsTable';
 import { DuplicatesDetection } from './components/DuplicatesDetection';
+import { ToastContainer } from './components/Toast';
+import { ConfirmDialog } from './components/ConfirmDialog';
 import { parseCFONB } from './utils/cfonbParser';
 import { exportToCSV } from './utils/csvExport';
 import { ParseResult, CFONBRecord } from './types/cfonb';
 import { demoParseResult } from './data/demoData';
-import { Banknote, FileText, BarChart3, AlertTriangle } from 'lucide-react';
+import { useToast } from './hooks/useToast';
+import { BarChart3, AlertTriangle } from 'lucide-react';
 
 function App() {
   const [parseResult, setParseResult] = useState<ParseResult | null>(null);
@@ -17,6 +21,16 @@ function App() {
   const [activeTab, setActiveTab] = useState<string>('stats');
   const [selectedAccount, setSelectedAccount] = useState<string>('');
   const [showUpload, setShowUpload] = useState<boolean>(false);
+  const [showConfirmReset, setShowConfirmReset] = useState<boolean>(false);
+  const { toasts, removeToast, error } = useToast();
+
+  const handleResetConfirm = () => {
+    setParseResult(null);
+    setFilename('');
+    setSelectedAccount('');
+    setActiveTab('stats');
+    setShowConfirmReset(false);
+  };
 
   const handleFileLoad = (content: string, filename: string) => {
     try {
@@ -25,32 +39,27 @@ function App() {
       setFilename(filename);
       setActiveTab('stats');
       setSelectedAccount('');
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
-      
-      // Messages d'erreur plus explicites
-      let userMessage = errorMessage;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur inconnue';
+
+      let title = 'Erreur de format';
+      let message = errorMessage;
+
       if (errorMessage.includes('XML détecté')) {
-        userMessage = '❌ Format non supporté\n\n' + 
-          'Vous tentez d\'importer un fichier XML (probablement SEPA).\n' +
-          'Cette application traite uniquement les fichiers CFONB 120/121 caractères.\n\n' +
-          '💡 Conseil: Demandez à votre banque un export au format CFONB via EBICS.';
+        title = 'Format non supporté';
+        message = 'Vous tentez d\'importer un fichier XML (probablement SEPA).\nCette application traite uniquement les fichiers CFONB 120/121 caractères.\n\nConseil: Demandez à votre banque un export au format CFONB via EBICS.';
       } else if (errorMessage.includes('JSON détecté')) {
-        userMessage = '❌ Format non supporté\n\n' + 
-          'Vous tentez d\'importer un fichier JSON.\n' +
-          'Cette application traite uniquement les fichiers CFONB 120/121 caractères.';
+        title = 'Format non supporté';
+        message = 'Vous tentez d\'importer un fichier JSON.\nCette application traite uniquement les fichiers CFONB 120/121 caractères.';
       } else if (errorMessage.includes('CSV détecté')) {
-        userMessage = '❌ Format non supporté\n\n' + 
-          'Vous tentez d\'importer un fichier CSV.\n' +
-          'Cette application traite uniquement les fichiers CFONB 120/121 caractères.';
+        title = 'Format non supporté';
+        message = 'Vous tentez d\'importer un fichier CSV.\nCette application traite uniquement les fichiers CFONB 120/121 caractères.';
       } else if (errorMessage.includes('Longueur incorrecte')) {
-        userMessage = '❌ Format CFONB invalide\n\n' + 
-          'Le fichier ne respecte pas le format CFONB 120/121 caractères.\n' +
-          'Chaque ligne doit faire exactement 120 ou 121 caractères.\n\n' +
-          '💡 Vérifiez que c\'est bien un fichier de relevé bancaire CFONB.';
+        title = 'Format CFONB invalide';
+        message = 'Le fichier ne respecte pas le format CFONB 120/121 caractères.\nChaque ligne doit faire exactement 120 ou 121 caractères.\n\nVérifiez que c\'est bien un fichier de relevé bancaire CFONB.';
       }
-      
-      alert(userMessage);
+
+      error(title, message, 10000);
     }
   };
 
@@ -117,49 +126,27 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-100">
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+      <ConfirmDialog
+        isOpen={showConfirmReset}
+        title="Analyser un nouveau fichier ?"
+        message="Vous allez perdre toutes les données actuellement chargées. Cette action est irréversible.\n\nÊtes-vous sûr de vouloir continuer ?"
+        confirmText="Oui, analyser un nouveau fichier"
+        cancelText="Non, annuler"
+        variant="warning"
+        onConfirm={handleResetConfirm}
+        onCancel={() => setShowConfirmReset(false)}
+      />
       {!parseResult && !showUpload ? (
         <HomePage onLoadDemo={loadDemoData} onShowUpload={handleShowUpload} />
       ) : !parseResult ? (
         <div>
-          {/* Header */}
-          <header className="bg-white shadow-sm border-b border-gray-200">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center justify-between h-16">
-                <div className="flex items-center space-x-3">
-                  <div className="flex items-center space-x-2">
-                    <Banknote className="h-8 w-8 text-purple-600" />
-                    <FileText className="h-8 w-8 text-purple-600" />
-                  </div>
-                  <div>
-                    <h1 className="text-xl font-bold text-gray-900">
-                      Parseur CFONB 120/121
-                    </h1>
-                    <p className="text-sm text-gray-500">
-                      Analyseur de relevés bancaires EBICS
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="text-sm text-gray-500">
-                  <div className="flex items-center space-x-4">
-                    <span>Norme CFONB • Format 120/121 caractères</span>
-                    <button
-                      onClick={loadDemoData}
-                      className="bg-purple-600 text-white px-3 py-1 rounded text-xs hover:bg-purple-700 transition-colors"
-                    >
-                      Voir la démo
-                    </button>
-                    <button
-                      onClick={() => setShowUpload(false)}
-                      className="bg-gray-600 text-white px-3 py-1 rounded text-xs hover:bg-gray-700 transition-colors"
-                    >
-                      ← Accueil
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </header>
+          <Header
+            onLoadDemo={loadDemoData}
+            onBackToHome={() => setShowUpload(false)}
+            showDemoButton={true}
+            showBackButton={true}
+          />
 
           <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="space-y-8">
@@ -174,7 +161,7 @@ function App() {
               </p>
             </div>
             
-            <FileUpload onFileLoad={handleFileLoad} />
+            <FileUpload onFileLoad={handleFileLoad} onError={(title, message) => error(title, message, 8000)} />
             
             <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -206,39 +193,7 @@ function App() {
         </div>
       ) : (
         <div>
-          {/* Header */}
-          <header className="bg-white shadow-sm border-b border-gray-200">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center justify-between h-16">
-                <div className="flex items-center space-x-3">
-                  <div className="flex items-center space-x-2">
-                    <Banknote className="h-8 w-8 text-purple-600" />
-                    <FileText className="h-8 w-8 text-purple-600" />
-                  </div>
-                  <div>
-                    <h1 className="text-xl font-bold text-gray-900">
-                      Parseur CFONB 120/121
-                    </h1>
-                    <p className="text-sm text-gray-500">
-                      Analyseur de relevés bancaires EBICS
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="text-sm text-gray-500">
-                  <div className="flex items-center space-x-4">
-                    <span>Norme CFONB • Format 120/121 caractères</span>
-                    <button
-                      onClick={loadDemoData}
-                      className="bg-purple-600 text-white px-3 py-1 rounded text-xs hover:bg-purple-700 transition-colors"
-                    >
-                      Voir la démo
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </header>
+          <Header onLoadDemo={loadDemoData} showDemoButton={true} />
 
           <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="space-y-6">
@@ -361,10 +316,7 @@ function App() {
             {/* Actions */}
             <div className="flex justify-center">
               <button
-                onClick={() => {
-                  setParseResult(null);
-                  setFilename('');
-                }}
+                onClick={() => setShowConfirmReset(true)}
                 className="text-blue-600 hover:text-blue-800 font-medium"
               >
                 ← Analyser un autre fichier

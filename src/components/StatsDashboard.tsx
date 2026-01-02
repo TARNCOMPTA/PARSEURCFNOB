@@ -18,25 +18,24 @@ export function StatsDashboard({ result, filename }: StatsDashboardProps) {
   const handleLimpeedExport = () => {
     exportToLimpeedCSV(result.records, 'export_limpeed.csv');
   };
-  const StatCard = ({ 
-    title, 
-    value, 
-    icon: Icon, 
+  const StatCard = ({
+    title,
+    value,
+    icon: Icon,
     color = 'blue',
-    description 
+    description
   }: {
     title: string;
     value: string | number;
     icon: React.ComponentType<{ className?: string }>;
-    color?: 'blue' | 'green' | 'yellow' | 'red' | 'purple';
+    color?: 'blue' | 'green' | 'yellow' | 'red';
     description?: string;
   }) => {
     const colorClasses = {
       blue: 'bg-blue-50 text-blue-700 border-blue-200',
       green: 'bg-green-50 text-green-700 border-green-200',
       yellow: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-      red: 'bg-red-50 text-red-700 border-red-200',
-      purple: 'bg-purple-50 text-purple-700 border-purple-200'
+      red: 'bg-red-50 text-red-700 border-red-200'
     };
 
     return (
@@ -70,7 +69,7 @@ export function StatsDashboard({ result, filename }: StatsDashboardProps) {
         <div className="mt-4">
           <button
             onClick={handleLimpeedExport}
-            className="flex items-center space-x-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+            className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
           >
             <CheckCircle className="h-4 w-4" />
             <span>Export LIMPEED</span>
@@ -100,7 +99,7 @@ export function StatsDashboard({ result, filename }: StatsDashboardProps) {
           title="Compléments"
           value={stats.complements}
           icon={CheckCircle}
-          color="purple"
+          color="blue"
           description="Informations additionnelles"
         />
         

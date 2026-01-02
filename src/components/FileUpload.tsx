@@ -3,9 +3,10 @@ import { Upload, FileText, AlertCircle } from 'lucide-react';
 
 interface FileUploadProps {
   onFileLoad: (content: string, filename: string) => void;
+  onError?: (title: string, message: string) => void;
 }
 
-export function FileUpload({ onFileLoad }: FileUploadProps) {
+export function FileUpload({ onFileLoad, onError }: FileUploadProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -25,7 +26,9 @@ export function FileUpload({ onFileLoad }: FileUploadProps) {
     };
     
     reader.onerror = () => {
-      alert('Erreur lors de la lecture du fichier. Vérifiez que le fichier n\'est pas corrompu.');
+      if (onError) {
+        onError('Erreur de lecture', 'Erreur lors de la lecture du fichier. Vérifiez que le fichier n\'est pas corrompu.');
+      }
       setIsLoading(false);
     };
     
