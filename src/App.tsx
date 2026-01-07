@@ -13,7 +13,7 @@ import { exportToCSV } from './utils/csvExport';
 import { ParseResult, CFONBRecord } from './types/cfonb';
 import { demoParseResult } from './data/demoData';
 import { useToast } from './hooks/useToast';
-import { BarChart3, AlertTriangle } from 'lucide-react';
+import { BarChart3, AlertTriangle, FileText } from 'lucide-react';
 
 function App() {
   const [parseResult, setParseResult] = useState<ParseResult | null>(null);
